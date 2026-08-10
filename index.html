@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>YBP PondWatch</title>
+<style>
+  :root {
+    --green: #008000;
+    --green-dark: #006400;
+    --blue: #2563eb;
+    --blue-dark: #1d4ed8;
+    --bg: #f3f4f6;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --danger: #dc2626;
+    --radius: 12px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.45;
+    padding-bottom: 72px;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--green);
+    color: white;
+    padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  .header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .brand h1 { font-size: 1.25rem; font-weight: 700; }
+  .brand p { font-size: 0.7rem; opacity: 0.9; margin-top: 1px; }
+  .header-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .icon-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .text-btn {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: white;
+    padding: 0 12px;
+    height: 38px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  main {
+    padding: 14px 12px 24px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .section-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 14px 0 8px 4px;
+  }
+
+  .recent-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  @media (min-width: 640px) {
+    .recent-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .recent-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+    border-left: 5px solid var(--green);
+  }
+  .recent-card .site-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--green-dark);
+    margin-bottom: 6px;
+  }
+  .readings-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .reading-item { flex: 1; min-width: 110px; }
+  .reading-item .label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; }
+  .reading-item .value { font-size: 1.15rem; font-weight: 700; }
+  .timestamp { font-size: 0.75rem; color: var(--muted); margin-top: 8px; }
+
+  .entry-item {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .entry-info { flex: 1; min-width: 0; }
+  .entry-date { font-weight: 600; font-size: 0.95rem; }
+  .entry-time { font-size: 0.75rem; color: var(--muted); }
+  .entry-values { font-size: 0.9rem; margin-top: 3px; }
+  .entry-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .btn-edit { background: #dbeafe; color: var(--blue-dark); }
+  .btn-del { background: #fee2e2; color: var(--danger); }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+  }
+  .card h2 { font-size: 1.05rem; color: var(--green-dark); margin-bottom: 12px; }
+  label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; color: var(--muted); }
+  input, select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: #fff;
+    margin-bottom: 12px;
+  }
+  input:focus, select:focus { outline: 2px solid var(--blue); border-color: transparent; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 12px 18px; border: none; border-radius: 8px;
+    font-size: 0.95rem; font-weight: 600; cursor: pointer; width: 100%;
+  }
+  .btn-primary { background: var(--green); color: white; }
+  .btn-primary:active { background: var(--green-dark); }
+  .btn-blue { background: var(--blue); color: white; }
+  .btn-outline { background: white; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-row { display: flex; gap: 8px; margin-top: 4px; }
+  .btn-row .btn { flex: 1; }
+
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; border-top: 1px solid var(--border);
+    display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    z-index: 40; padding: 0 4px;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
+  }
+  .nav-tab {
+    flex: 1; min-width: 76px; padding: 10px 6px 8px;
+    text-align: center; font-size: 0.72rem; font-weight: 600;
+    color: var(--muted); background: none; border: none; cursor: pointer;
+    white-space: nowrap;
+  }
+  .nav-tab.active { color: var(--green); }
+  .nav-tab .tab-icon { font-size: 1.15rem; display: block; margin-bottom: 2px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .empty { text-align: center; padding: 28px 16px; color: var(--muted); font-size: 0.95rem; }
+
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 100; display: none; align-items: flex-end; justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: white; width: 100%; max-width: 440px;
+    border-radius: 16px 16px 0 0; padding: 20px 16px 28px;
+    max-height: 90vh; overflow-y: auto;
+  }
+  @media (min-width: 600px) {
+    .modal-bg { align-items: center; }
+    .modal { border-radius: 16px; margin: 20px; }
+  }
+  .modal h3 { font-size: 1.15rem; margin-bottom: 14px; color: var(--green-dark); }
+  .modal-close { float: right; background: none; border: none; font-size: 1.4rem; color: var(--muted); cursor: pointer; }
+
+  .checkbox-list {
+    max-height: 160px; overflow-y: auto; border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px; margin-bottom: 12px;
+  }
+  .checkbox-item { display: flex; align-items: center; gap: 8px; padding: 6px 4px; }
+  .checkbox-item input { width: auto; margin: 0; }
+
+  .data-tools {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .data-tools .btn { width: auto; flex: 1; min-width: 120px; padding: 10px 12px; font-size: 0.85rem; }
+
+  @media (min-width: 700px) {
+    body { padding-bottom: 80px; }
+    .bottom-nav {
+      justify-content: center;
+      max-width: 900px;
+      margin: 0 auto;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 12px 12px 0 0;
+    }
+    .nav-tab { flex: none; min-width: 110px; }
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    header, .bottom-nav, .no-print, .btn, .icon-btn, .text-btn, .entry-actions { display: none !important; }
+    main { padding: 0; max-width: 100%; }
+    .panel { display: none !important; }
+    #reportPanel { display: block !important; }
+    .card { box-shadow: none; border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <h1>YBP PondWatch</h1>
+      <p>York Building Products · Environmental &amp; Engineering</p>
+    </div>
+    <div class="header-btns">
+      <button class="icon-btn" onclick="openAddEntry()" title="Add Entry">＋</button>
+      <button class="icon-btn" onclick="showPanel('sites')" title="Manage Sites">⚙</button>
+      <button class="icon-btn" onclick="showPanel('report')" title="Reports">📄</button>
+      <button class="text-btn" onclick="exportData()" title="Export data">Export</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- MAIN READINGS VIEW -->
+  <div id="mainPanel" class="panel active">
+    <div id="recentSection"></div>
+    <div class="section-title" id="historyTitle">History</div>
+    <div id="historySection"></div>
+  </div>
+
+  <!-- SITES + DATA TOOLS -->
+  <div id="sitesPanel" class="panel">
+    <div class="card">
+      <h2>Add New Site</h2>
+      <label>Site Name</label>
+      <input type="text" id="newSiteName" placeholder="e.g. North Pond">
+      <label>Default TSS Unit</label>
+      <select id="newSiteUnit">
+        <option value="g/L">g/L</option>
+        <option value="mg/L">mg/L</option>
+      </select>
+      <button class="btn btn-primary" onclick="addSite()">Add Site</button>
+    </div>
+
+    <div class="card">
+      <h2>Manage Sites</h2>
+      <div id="sitesList"></div>
+    </div>
+
+    <div class="card">
+      <h2>Share / Backup Data</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:12px;">
+        Export a JSON file and email it to your boss. He can open this same page on his device and use Import to load your data.
+      </p>
+      <div class="data-tools">
+        <button class="btn btn-primary" onclick="exportData()">Export JSON</button>
+        <button class="btn btn-blue" onclick="document.getElementById('importFile').click()">Import JSON</button>
+      </div>
+      <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importData(event)">
+    </div>
+
+    <button class="btn btn-outline" onclick="showPanel('main')">← Back to Readings</button>
+  </div>
+
+  <!-- REPORT -->
+  <div id="reportPanel" class="panel">
+    <div class="card no-print">
+      <h2>Generate Printable Report</h2>
+      <label>Select Sites to Include</label>
+      <div class="checkbox-list" id="reportSites"></div>
+      <div class="form-row">
+        <div>
+          <label>Start Date</label>
+          <input type="date" id="reportStart">
+        </div>
+        <div>
+          <label>End Date</label>
+          <input type="date" id="reportEnd">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="generateReport()">Generate</button>
+        <button class="btn btn-blue" onclick="window.print()">Print</button>
+      </div>
+    </div>
+    <div id="reportOutput" class="card">
+      <div class="empty">Select sites and dates, then generate a report.</div>
+    </div>
+    <button class="btn btn-outline no-print" style="margin-top:12px;" onclick="showPanel('main')">← Back</button>
+  </div>
+</main>
+
+<nav class="bottom-nav" id="bottomNav"></nav>
+
+<!-- ENTRY MODAL -->
+<div class="modal-bg" id="entryModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeEntryModal()">×</button>
+    <h3 id="entryModalTitle">Add New Entry</h3>
+    <input type="hidden" id="editId">
+    <label>Site</label>
+    <select id="entrySite"></select>
+    <label>Date</label>
+    <input type="date" id="entryDate">
+    <div class="form-row">
+      <div>
+        <label>Clarity (TSS)</label>
+        <input type="number" id="entryClarity" step="any" min="0" placeholder="0.14">
+      </div>
+      <div>
+        <label>Unit</label>
+        <select id="entryUnit">
+          <option value="g/L">g/L</option>
+          <option value="mg/L">mg/L</option>
+        </select>
+      </div>
+    </div>
+    <label>Water Level (inches)</label>
+    <input type="number" id="entryLevel" step="0.1" min="0" placeholder="49.3">
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn btn-outline" onclick="closeEntryModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- SITE EDIT MODAL -->
+<div class="modal-bg" id="siteModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeSiteModal()">×</button>
+    <h3>Edit Site</h3>
+    <input type="hidden" id="editSiteId">
+    <label>Site Name</label>
+    <input type="text" id="editSiteName">
+    <label>Default Unit</label>
+    <select id="editSiteUnit">
+      <option value="g/L">g/L</option>
+      <option value="mg/L">mg/L</option>
+    </select>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="closeSiteModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSiteEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE = 'ybp_pondwatch_v4';
+let state = { sites: [], readings: [] };
+let currentSiteId = 'all';
+
+// 5:30 AM Eastern on 2026-08-10 (EDT = UTC-4 → 09:30Z)
+const DEFAULT_TS = '2026-08-10T09:30:00.000Z';
+
+function getESTParts(date = new Date()) {
+  const d = new Date(date);
+  const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const timeStr = d.toLocaleTimeString('en-US', {
+    timeZone: 'America/New_York',
+    hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
+  });
+  return { dateStr, timeStr };
+}
+function todayEST() { return getESTParts().dateStr; }
+function formatTimestamp(iso) {
+  if (!iso) return '';
+  const p = getESTParts(new Date(iso));
+  return `${p.dateStr} · ${p.timeStr} EST`;
+}
+
+function load() {
+  const raw = localStorage.getItem(STORAGE);
+  if (raw) {
+    try { state = JSON.parse(raw); } catch(e) {}
+  }
+  if (!state.sites || state.sites.length === 0) {
+    state.sites = [
+      { id: 'shockley', name: 'Shockley', unit: 'g/L' },
+      { id: 'darkrun', name: 'Dark Run', unit: 'mg/L' }
+    ];
+    state.readings = [
+      { id: uid(), siteId: 'shockley', date: '2026-08-10', clarity: 0.14, unit: 'g/L', level: 49.3, ts: DEFAULT_TS },
+      { id: uid(), siteId: 'darkrun', date: '2026-08-10', clarity: 18, unit: 'mg/L', level: 29.9, ts: DEFAULT_TS }
+    ];
+    save();
+  }
+}
+function save() { localStorage.setItem(STORAGE, JSON.stringify(state)); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+function $(id) { return document.getElementById(id); }
+function getSite(id) { return state.sites.find(s => s.id === id); }
+function escapeHtml(t) {
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderNav() {
+  const nav = $('bottomNav');
+  let html = `<button class="nav-tab ${currentSiteId==='all'?'active':''}" onclick="switchSite('all')">
+    <span class="tab-icon">📊</span>All</button>`;
+  state.sites.forEach(s => {
+    const short = s.name.length > 10 ? s.name.slice(0,9)+'…' : s.name;
+    html += `<button class="nav-tab ${currentSiteId===s.id?'active':''}" onclick="switchSite('${s.id}')">
+      <span class="tab-icon">💧</span>${escapeHtml(short)}</button>`;
+  });
+  nav.innerHTML = html;
+}
+
+function switchSite(id) {
+  currentSiteId = id;
+  showPanel('main');
+  renderMain();
+  renderNav();
+}
+
+function renderMain() {
+  const recentEl = $('recentSection');
+  const historyEl = $('historySection');
+  const titleEl = $('historyTitle');
+
+  const sitesToShow = currentSiteId === 'all' ? state.sites : state.sites.filter(s => s.id === currentSiteId);
+
+  let recentHtml = '<div class="section-title">Most Recent</div><div class="recent-grid">';
+  if (sitesToShow.length === 0) {
+    recentHtml += '<div class="empty">No sites yet. Tap ⚙ to add one.</div>';
+  } else {
+    sitesToShow.forEach(site => {
+      const latest = state.readings
+        .filter(r => r.siteId === site.id)
+        .sort((a,b) => (b.ts || '').localeCompare(a.ts || ''))[0];
+      recentHtml += `
+        <div class="recent-card">
+          <div class="site-name">${escapeHtml(site.name)}</div>
+          <div class="readings-row">
+            <div class="reading-item">
+              <div class="label">Clarity (TSS)</div>
+              <div class="value">${latest ? latest.clarity + ' ' + latest.unit : '—'}</div>
+            </div>
+            <div class="reading-item">
+              <div class="label">Water Level</div>
+              <div class="value">${latest ? latest.level + '"' : '—'}</div>
+            </div>
+          </div>
+          <div class="timestamp">${latest ? formatTimestamp(latest.ts) : 'No readings yet'}</div>
+        </div>`;
+    });
+  }
+  recentHtml += '</div>';
+  recentEl.innerHTML = recentHtml;
+
+  let readings = [...state.readings];
+  if (currentSiteId !== 'all') readings = readings.filter(r => r.siteId === currentSiteId);
+  readings.sort((a,b) => (b.ts || b.date).localeCompare(a.ts || a.date));
+
+  titleEl.textContent = currentSiteId === 'all' ? 'All History' : (getSite(currentSiteId)?.name || '') + ' History';
+
+  if (readings.length === 0) {
+    historyEl.innerHTML = '<div class="empty">No entries yet. Tap ＋ to add one.</div>';
+    return;
+  }
+
+  let html = '';
+  readings.forEach(r => {
+    const site = getSite(r.siteId);
+    html += `
+      <div class="entry-item">
+        <div class="entry-info">
+          <div class="entry-date">${currentSiteId==='all' ? escapeHtml(site?.name||'?') + ' · ' : ''}${r.date}</div>
+          <div class="entry-time">${formatTimestamp(r.ts)}</div>
+          <div class="entry-values">${r.clarity} ${r.unit} · ${r.level}"</div>
+        </div>
+        <div class="entry-actions">
+          <button class="btn-sm btn-edit" onclick="editEntry('${r.id}')">Edit</button>
+          <button class="btn-sm btn-del" onclick="deleteEntry('${r.id}')">Del</button>
+        </div>
+      </div>`;
+  });
+  historyEl.innerHTML = html;
+}
+
+function renderSites() {
+  const list = $('sitesList');
+  if (state.sites.length === 0) {
+    list.innerHTML = '<div class="empty">No sites.</div>';
+    return;
+  }
+  let html = '';
+  state.sites.forEach(s => {
+    html += `
+      <div class="entry-item" style="margin-bottom:8px;">
+        <div class="entry-info">
+          <div class="entry-date">${escapeHtml(s.name)}</div>
+          <div class="entry-time">Default unit: ${s.unit}</div>
+        </div>
+        <div class="entry-actions">
+          <button class="btn-sm btn-edit" onclick="openEditSite('${s.id}')">Edit</button>
+          <button class="btn-sm btn-del" onclick="deleteSite('${s.id}')">Del</button>
+        </div>
+      </div>`;
+  });
+  list.innerHTML = html;
+}
+
+function addSite() {
+  const name = $('newSiteName').value.trim();
+  const unit = $('newSiteUnit').value;
+  if (!name) return alert('Enter a site name');
+  if (state.sites.some(s => s.name.toLowerCase() === name.toLowerCase())) return alert('Site already exists');
+  state.sites.push({ id: uid(), name, unit });
+  save();
+  $('newSiteName').value = '';
+  refresh();
+}
+
+function openEditSite(id) {
+  const s = getSite(id);
+  if (!s) return;
+  $('editSiteId').value = id;
+  $('editSiteName').value = s.name;
+  $('editSiteUnit').value = s.unit;
+  $('siteModal').classList.add('open');
+}
+function closeSiteModal() { $('siteModal').classList.remove('open'); }
+function saveSiteEdit() {
+  const id = $('editSiteId').value;
+  const name = $('editSiteName').value.trim();
+  const unit = $('editSiteUnit').value;
+  if (!name) return alert('Name required');
+  const s = getSite(id);
+  if (s) { s.name = name; s.unit = unit; save(); }
+  closeSiteModal();
+  refresh();
+}
+function deleteSite(id) {
+  const s = getSite(id);
+  if (!s) return;
+  if (!confirm(`Delete "${s.name}" and all its readings?`)) return;
+  state.sites = state.sites.filter(x => x.id !== id);
+  state.readings = state.readings.filter(r => r.siteId !== id);
+  if (currentSiteId === id) currentSiteId = 'all';
+  save();
+  refresh();
+}
+
+function openAddEntry() {
+  $('entryModalTitle').textContent = 'Add New Entry';
+  $('editId').value = '';
+  $('entryDate').value = todayEST();
+  $('entryClarity').value = '';
+  $('entryLevel').value = '';
+  populateEntrySites();
+  if (currentSiteId !== 'all') {
+    $('entrySite').value = currentSiteId;
+    const s = getSite(currentSiteId);
+    if (s) $('entryUnit').value = s.unit;
+  } else if (state.sites[0]) {
+    $('entrySite').value = state.sites[0].id;
+    $('entryUnit').value = state.sites[0].unit;
+  }
+  $('entryModal').classList.add('open');
+}
+
+function editEntry(id) {
+  const r = state.readings.find(x => x.id === id);
+  if (!r) return;
+  $('entryModalTitle').textContent = 'Edit Entry';
+  $('editId').value = id;
+  populateEntrySites();
+  $('entrySite').value = r.siteId;
+  $('entryDate').value = r.date;
+  $('entryClarity').value = r.clarity;
+  $('entryUnit').value = r.unit;
+  $('entryLevel').value = r.level;
+  $('entryModal').classList.add('open');
+}
+function closeEntryModal() { $('entryModal').classList.remove('open'); }
+
+function populateEntrySites() {
+  const sel = $('entrySite');
+  sel.innerHTML = '';
+  state.sites.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id; o.textContent = s.name;
+    sel.appendChild(o);
+  });
+}
+
+function saveEntry() {
+  const id = $('editId').value;
+  const siteId = $('entrySite').value;
+  const date = $('entryDate').value;
+  const clarity = parseFloat($('entryClarity').value);
+  const unit = $('entryUnit').value;
+  const level = parseFloat($('entryLevel').value);
+
+  if (!siteId || !date || isNaN(clarity) || isNaN(level)) {
+    return alert('Please fill all fields with valid numbers');
+  }
+
+  if (id) {
+    const r = state.readings.find(x => x.id === id);
+    if (r) {
+      r.siteId = siteId; r.date = date; r.clarity = clarity; r.unit = unit; r.level = level;
+    }
+  } else {
+    state.readings.push({
+      id: uid(), siteId, date, clarity, unit, level,
+      ts: new Date().toISOString()
+    });
+  }
+  save();
+  closeEntryModal();
+  refresh();
+}
+
+function deleteEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+  state.readings = state.readings.filter(r => r.id !== id);
+  save();
+  refresh();
+}
+
+/* ========== EXPORT / IMPORT ========== */
+function exportData() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    app: 'YBP PondWatch',
+    version: 4,
+    data: state
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = todayEST().replace(/-/g, '');
+  a.href = url;
+  a.download = `YBP-PondWatch-${stamp}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      // Accept either the wrapped export or a raw state object
+      const incoming = parsed.data ? parsed.data : parsed;
+
+      if (!incoming.sites || !Array.isArray(incoming.sites) || !incoming.readings || !Array.isArray(incoming.readings)) {
+        alert('This file does not look like a valid YBP PondWatch export.');
+        return;
+      }
+
+      const msg = `Import this data?\n\n` +
+        `Sites: ${incoming.sites.length}\n` +
+        `Readings: ${incoming.readings.length}\n\n` +
+        `This will replace all data currently on this device.`;
+      if (!confirm(msg)) {
+        event.target.value = '';
+        return;
+      }
+
+      state = {
+        sites: incoming.sites,
+        readings: incoming.readings
+      };
+      save();
+      currentSiteId = 'all';
+      refresh();
+      alert('Import successful! Data is now loaded on this device.');
+    } catch (err) {
+      alert('Could not read the file. Make sure it is a valid JSON export from YBP PondWatch.');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function renderReportSites() {
+  const box = $('reportSites');
+  box.innerHTML = '';
+  state.sites.forEach(s => {
+    box.innerHTML += `<label class="checkbox-item">
+      <input type="checkbox" value="${s.id}" checked> ${escapeHtml(s.name)}
+    </label>`;
+  });
+}
+
+function generateReport() {
+  const checked = [...document.querySelectorAll('#reportSites input:checked')].map(c => c.value);
+  const start = $('reportStart').value;
+  const end = $('reportEnd').value;
+  if (checked.length === 0) return alert('Select at least one site');
+  if (!start || !end) return alert('Select start and end dates');
+  if (start > end) return alert('Start date must be before end date');
+
+  let readings = state.readings.filter(r =>
+    checked.includes(r.siteId) && r.date >= start && r.date <= end
+  );
+  readings.sort((a,b) => a.date.localeCompare(b.date) || (a.ts||'').localeCompare(b.ts||''));
+
+  const out = $('reportOutput');
+  const siteNames = checked.map(id => getSite(id)?.name || id).join(', ');
+
+  let html = `
+    <div style="text-align:center;border-bottom:2px solid #008000;padding-bottom:12px;margin-bottom:16px;">
+      <h2 style="color:#008000;margin:0 0 4px;">YBP PondWatch Report</h2>
+      <div style="font-size:0.85rem;color:#555;">
+        York Building Products · Environmental &amp; Engineering<br>
+        Sites: ${escapeHtml(siteNames)}<br>
+        Period: ${start} to ${end}<br>
+        Generated: ${formatTimestamp(new Date().toISOString())}
+      </div>
+    </div>`;
+
+  if (readings.length === 0) {
+    html += '<div class="empty">No readings found for the selected criteria.</div>';
+    out.innerHTML = html;
+    return;
+  }
+
+  html += `<table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+    <thead><tr style="background:#e8f5e9;">
+      <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Date / Time (EST)</th>
+      <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Site</th>
+      <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Clarity</th>
+      <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Level</th>
+    </tr></thead><tbody>`;
+
+  readings.forEach(r => {
+    const s = getSite(r.siteId);
+    const timeOnly = formatTimestamp(r.ts).split('·')[1] || '';
+    html += `<tr>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;">${r.date}<br><span style="font-size:0.75rem;color:#666;">${timeOnly}</span></td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;">${escapeHtml(s?.name||'')}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;">${r.clarity} ${r.unit}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;">${r.level}"</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+
+  const bySite = {};
+  readings.forEach(r => { (bySite[r.siteId] = bySite[r.siteId] || []).push(r); });
+  html += `<h3 style="margin:20px 0 10px;color:#008000;font-size:1rem;">Summary</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+      <thead><tr style="background:#e8f5e9;">
+        <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc;">Site</th>
+        <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc;">#</th>
+        <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc;">Avg Clarity</th>
+        <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc;">Avg Level</th>
+        <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc;">Min / Max Level</th>
+      </tr></thead><tbody>`;
+
+  Object.keys(bySite).forEach(sid => {
+    const list = bySite[sid];
+    const s = getSite(sid);
+    const avgC = (list.reduce((a,r)=>a+r.clarity,0)/list.length).toFixed(2);
+    const avgL = (list.reduce((a,r)=>a+r.level,0)/list.length).toFixed(1);
+    const minL = Math.min(...list.map(r=>r.level)).toFixed(1);
+    const maxL = Math.max(...list.map(r=>r.level)).toFixed(1);
+    html += `<tr>
+      <td style="padding:6px;border-bottom:1px solid #eee;">${escapeHtml(s?.name||'')}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee;">${list.length}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee;">${avgC} ${list[0].unit}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee;">${avgL}"</td>
+      <td style="padding:6px;border-bottom:1px solid #eee;">${minL}" / ${maxL}"</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  out.innerHTML = html;
+}
+
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  if (name === 'main') $('mainPanel').classList.add('active');
+  else if (name === 'sites') { $('sitesPanel').classList.add('active'); renderSites(); }
+  else if (name === 'report') {
+    $('reportPanel').classList.add('active');
+    renderReportSites();
+    $('reportStart').value = todayEST();
+    $('reportEnd').value = todayEST();
+  }
+}
+
+function refresh() {
+  renderNav();
+  renderMain();
+  renderSites();
+}
+
+// Init
+load();
+$('reportStart').value = todayEST();
+$('reportEnd').value = todayEST();
+refresh();
+</script>
+</body>
+</html>
