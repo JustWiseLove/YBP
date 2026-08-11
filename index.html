@@ -169,7 +169,7 @@
   <div class="header-inner">
     <div class="brand">
       <h1>YBP PondWatch</h1>
-      <p>Environmental &amp; Engineering</p>
+      <p>York Building Products · Environmental &amp; Engineering</p>
     </div>
     <div class="header-btns">
       <button class="icon-btn" onclick="openAddEntry()" title="Add Entry">＋</button>
@@ -198,20 +198,29 @@
       </select>
       <div class="form-row">
         <div>
-          <label>Moderate Warning (″)</label>
+          <label>Level Moderate (″)</label>
           <input type="number" id="newSiteMod" step="0.1" min="0" placeholder="e.g. 18.0">
         </div>
         <div>
-          <label>Critical Warning (″)</label>
+          <label>Level Critical (″)</label>
           <input type="number" id="newSiteCrit" step="0.1" min="0" placeholder="e.g. 30.0">
         </div>
       </div>
+      <div class="form-row">
+        <div>
+          <label>Quality Critical (mg/L)</label>
+          <input type="number" id="newSiteQualityCrit" step="any" min="0" placeholder="e.g. 30" value="30">
+        </div>
+        <div></div>
+      </div>
       <button class="btn btn-primary" onclick="addSite()">Add Site</button>
     </div>
+
     <div class="card">
       <h2>Manage Sites</h2>
       <div id="sitesList"></div>
     </div>
+
     <button class="btn btn-outline" onclick="showPanel('main')">← Back to Readings</button>
   </div>
 
@@ -244,6 +253,7 @@
 
 <nav class="bottom-nav" id="bottomNav"></nav>
 
+<!-- ENTRY MODAL -->
 <div class="modal-bg" id="entryModal">
   <div class="modal">
     <button class="modal-close" onclick="closeEntryModal()">×</button>
@@ -275,6 +285,7 @@
   </div>
 </div>
 
+<!-- SITE EDIT MODAL -->
 <div class="modal-bg" id="siteModal">
   <div class="modal">
     <button class="modal-close" onclick="closeSiteModal()">×</button>
@@ -289,17 +300,25 @@
     </select>
     <div class="form-row">
       <div>
-        <label>Moderate Warning (″)</label>
+        <label>Level Moderate (″)</label>
         <input type="number" id="editSiteMod" step="0.1" min="0" placeholder="e.g. 64.0">
       </div>
       <div>
-        <label>Critical Warning (″)</label>
+        <label>Level Critical (″)</label>
         <input type="number" id="editSiteCrit" step="0.1" min="0" placeholder="e.g. 70.0">
       </div>
     </div>
+    <div class="form-row">
+      <div>
+        <label>Quality Critical (mg/L)</label>
+        <input type="number" id="editSiteQualityCrit" step="any" min="0" placeholder="e.g. 30">
+      </div>
+      <div></div>
+    </div>
     <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">
       Level turns <span style="color:var(--orange);font-weight:700;">orange</span> above Moderate and
-      <span style="color:var(--red);font-weight:700;">red</span> above Critical.
+      <span style="color:var(--red);font-weight:700;">red</span> above Critical.<br>
+      Clarity turns <span style="color:var(--red);font-weight:700;">red</span> when above Quality Critical (mg/L).
     </p>
     <div class="btn-row">
       <button class="btn btn-outline" onclick="closeSiteModal()">Cancel</button>
@@ -308,11 +327,10 @@
   </div>
 </div>
 
-<!-- Load the shared data first -->
 <script src="store.js"></script>
 
 <script>
-const STORAGE = 'ybp_pondwatch_v7';
+const STORAGE = 'ybp_pondwatch_v8';
 let state = { sites: [], readings: [] };
 let currentSiteId = 'all';
 
@@ -333,7 +351,6 @@ function formatTimestamp(iso) {
 }
 
 function load() {
-  // 1. Start with the shared data from store.js (visible to everyone)
   if (typeof STORE !== 'undefined' && STORE.sites && STORE.readings) {
     state = {
       sites: JSON.parse(JSON.stringify(STORE.sites)),
@@ -341,21 +358,18 @@ function load() {
     };
   }
 
-  // 2. Overlay any personal changes this browser has saved
   const raw = localStorage.getItem(STORAGE);
   if (raw) {
     try {
       const local = JSON.parse(raw);
-      if (local.sites && local.readings) {
-        state = local;          // personal edits take priority on this device
-      }
+      if (local.sites && local.readings) state = local;
     } catch(e) {}
   }
 
-  // Ensure warning fields exist
   state.sites.forEach(s => {
     if (s.moderate === undefined) s.moderate = null;
     if (s.critical === undefined) s.critical = null;
+    if (s.qualityCritical === undefined) s.qualityCritical = 30;
   });
 }
 
@@ -373,12 +387,27 @@ function escapeHtml(t) {
   return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+/** Convert any clarity value to mg/L for comparison */
+function toMgL(clarity, unit) {
+  if (unit === 'g/L') return clarity * 1000;
+  return clarity; // already mg/L
+}
+
 function getLevelStatus(site, level) {
   if (!site || level == null || isNaN(level)) return null;
   const crit = site.critical != null && site.critical !== '' ? Number(site.critical) : null;
   const mod  = site.moderate != null && site.moderate !== '' ? Number(site.moderate) : null;
   if (crit != null && level > crit) return 'crit';
   if (mod  != null && level > mod)  return 'mod';
+  return null;
+}
+
+function getQualityStatus(site, clarity, unit) {
+  if (!site || clarity == null || isNaN(clarity)) return null;
+  const qCrit = site.qualityCritical != null && site.qualityCritical !== '' ? Number(site.qualityCritical) : null;
+  if (qCrit == null) return null;
+  const mgL = toMgL(clarity, unit);
+  if (mgL > qCrit) return 'crit';
   return null;
 }
 
@@ -393,6 +422,16 @@ function levelHtml(site, level) {
     badge = '<span class="warn-badge badge-mod">MODERATE</span>';
   }
   return `<span class="${cls}">${level}"</span>${badge}`;
+}
+
+function clarityHtml(site, clarity, unit) {
+  const status = getQualityStatus(site, clarity, unit);
+  let cls = '', badge = '';
+  if (status === 'crit') {
+    cls = 'level-crit';
+    badge = '<span class="warn-badge badge-crit">CRITICAL</span>';
+  }
+  return `<span class="${cls}">${clarity} ${unit}</span>${badge}`;
 }
 
 function renderNav() {
@@ -428,18 +467,17 @@ function renderMain() {
       const latest = state.readings
         .filter(r => r.siteId === site.id)
         .sort((a,b) => (b.ts || '').localeCompare(a.ts || ''))[0];
-      const levelDisplay = latest ? levelHtml(site, latest.level) : '—';
       recentHtml += `
         <div class="recent-card">
           <div class="site-name">${escapeHtml(site.name)}</div>
           <div class="readings-row">
             <div class="reading-item">
               <div class="label">Clarity (TSS)</div>
-              <div class="value">${latest ? latest.clarity + ' ' + latest.unit : '—'}</div>
+              <div class="value">${latest ? clarityHtml(site, latest.clarity, latest.unit) : '—'}</div>
             </div>
             <div class="reading-item">
               <div class="label">Water Level</div>
-              <div class="value">${levelDisplay}</div>
+              <div class="value">${latest ? levelHtml(site, latest.level) : '—'}</div>
             </div>
           </div>
           <div class="timestamp">${latest ? formatTimestamp(latest.ts) : 'No readings yet'}</div>
@@ -468,7 +506,7 @@ function renderMain() {
         <div class="entry-info">
           <div class="entry-date">${currentSiteId==='all' ? escapeHtml(site?.name||'?') + ' · ' : ''}${r.date}</div>
           <div class="entry-time">${formatTimestamp(r.ts)}</div>
-          <div class="entry-values">${r.clarity} ${r.unit} · ${levelHtml(site, r.level)}</div>
+          <div class="entry-values">${clarityHtml(site, r.clarity, r.unit)} · ${levelHtml(site, r.level)}</div>
         </div>
         <div class="entry-actions">
           <button class="btn-sm btn-edit" onclick="editEntry('${r.id}')">Edit</button>
@@ -489,14 +527,16 @@ function renderSites() {
   state.sites.forEach(s => {
     const mod = s.moderate != null ? s.moderate + '"' : '—';
     const crit = s.critical != null ? s.critical + '"' : '—';
+    const qCrit = s.qualityCritical != null ? s.qualityCritical + ' mg/L' : '—';
     html += `
       <div class="entry-item" style="margin-bottom:8px;">
         <div class="entry-info">
           <div class="entry-date">${escapeHtml(s.name)}</div>
           <div class="entry-time">Unit: ${s.unit}</div>
           <div class="threshold-info">
-            Moderate: <span style="color:var(--orange);font-weight:600;">${mod}</span> ·
-            Critical: <span style="color:var(--red);font-weight:600;">${crit}</span>
+            Level Mod: <span style="color:var(--orange);font-weight:600;">${mod}</span> ·
+            Level Crit: <span style="color:var(--red);font-weight:600;">${crit}</span><br>
+            Quality Crit: <span style="color:var(--red);font-weight:600;">${qCrit}</span>
           </div>
         </div>
         <div class="entry-actions">
@@ -513,13 +553,15 @@ function addSite() {
   const unit = $('newSiteUnit').value;
   const mod = $('newSiteMod').value !== '' ? parseFloat($('newSiteMod').value) : null;
   const crit = $('newSiteCrit').value !== '' ? parseFloat($('newSiteCrit').value) : null;
+  const qCrit = $('newSiteQualityCrit').value !== '' ? parseFloat($('newSiteQualityCrit').value) : 30;
   if (!name) return alert('Enter a site name');
   if (state.sites.some(s => s.name.toLowerCase() === name.toLowerCase())) return alert('Site already exists');
-  state.sites.push({ id: uid(), name, unit, moderate: mod, critical: crit });
+  state.sites.push({ id: uid(), name, unit, moderate: mod, critical: crit, qualityCritical: qCrit });
   save();
   $('newSiteName').value = '';
   $('newSiteMod').value = '';
   $('newSiteCrit').value = '';
+  $('newSiteQualityCrit').value = '30';
   refresh();
 }
 
@@ -531,6 +573,7 @@ function openEditSite(id) {
   $('editSiteUnit').value = s.unit;
   $('editSiteMod').value = s.moderate != null ? s.moderate : '';
   $('editSiteCrit').value = s.critical != null ? s.critical : '';
+  $('editSiteQualityCrit').value = s.qualityCritical != null ? s.qualityCritical : '';
   $('siteModal').classList.add('open');
 }
 function closeSiteModal() { $('siteModal').classList.remove('open'); }
@@ -540,10 +583,15 @@ function saveSiteEdit() {
   const unit = $('editSiteUnit').value;
   const mod = $('editSiteMod').value !== '' ? parseFloat($('editSiteMod').value) : null;
   const crit = $('editSiteCrit').value !== '' ? parseFloat($('editSiteCrit').value) : null;
+  const qCrit = $('editSiteQualityCrit').value !== '' ? parseFloat($('editSiteQualityCrit').value) : null;
   if (!name) return alert('Name required');
   const s = getSite(id);
   if (s) {
-    s.name = name; s.unit = unit; s.moderate = mod; s.critical = crit;
+    s.name = name;
+    s.unit = unit;
+    s.moderate = mod;
+    s.critical = crit;
+    s.qualityCritical = qCrit;
     save();
   }
   closeSiteModal();
@@ -690,14 +738,16 @@ function generateReport() {
   readings.forEach(r => {
     const s = getSite(r.siteId);
     const timeOnly = formatTimestamp(r.ts).split('·')[1] || '';
-    const status = getLevelStatus(s, r.level);
+    const qStatus = getQualityStatus(s, r.clarity, r.unit);
+    const lStatus = getLevelStatus(s, r.level);
+    let clarityStyle = qStatus === 'crit' ? 'color:#dc2626;font-weight:700;' : '';
     let levelStyle = '';
-    if (status === 'crit') levelStyle = 'color:#dc2626;font-weight:700;';
-    else if (status === 'mod') levelStyle = 'color:#ea580c;font-weight:700;';
+    if (lStatus === 'crit') levelStyle = 'color:#dc2626;font-weight:700;';
+    else if (lStatus === 'mod') levelStyle = 'color:#ea580c;font-weight:700;';
     html += `<tr>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;">${r.date}<br><span style="font-size:0.75rem;color:#666;">${timeOnly}</span></td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;">${escapeHtml(s?.name||'')}</td>
-      <td style="padding:7px 8px;border-bottom:1px solid #eee;">${r.clarity} ${r.unit}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;${clarityStyle}">${r.clarity} ${r.unit}</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;${levelStyle}">${r.level}"</td>
     </tr>`;
   });
@@ -752,7 +802,6 @@ function refresh() {
   renderSites();
 }
 
-// ---------- START ----------
 load();
 $('reportStart').value = todayEST();
 $('reportEnd').value = todayEST();
