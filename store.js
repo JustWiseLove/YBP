@@ -1,18 +1,24 @@
+// ============================================================
+// YBP PondWatch – Shared Data Store
+// ============================================================
+
 const STORE = {
   sites: [
     {
       id: "shockley",
       name: "Shockley",
       unit: "g/L",
-      moderate: 64.0,
-      critical: 70.0
+      moderate: 64.0,          // water level (inches)
+      critical: 70.0,          // water level (inches)
+      qualityCritical: 30      // TSS critical in mg/L
     },
     {
       id: "darkrun",
       name: "Dark Run",
       unit: "mg/L",
       moderate: 18.0,
-      critical: 30.0
+      critical: 30.0,
+      qualityCritical: 30      // TSS critical in mg/L
     }
   ],
 
@@ -24,7 +30,7 @@ const STORE = {
       clarity: 0.14,
       unit: "g/L",
       level: 49.3,
-      ts: "2026-08-10T09:30:00.000Z"
+      ts: "2026-08-10T09:30:00.000Z"   // 5:30 AM Eastern
     },
     {
       id: "r002",
@@ -33,7 +39,7 @@ const STORE = {
       clarity: 18,
       unit: "mg/L",
       level: 29.9,
-      ts: "2026-08-10T09:30:00.000Z"
+      ts: "2026-08-10T09:30:00.000Z"   // 5:30 AM Eastern
     },
     {
       id: "r003",
