@@ -132,7 +132,7 @@ const STORE = {
       ts: "2026-08-14T09:30:00.000Z"
     },
     {
-      id: "r0013",
+      id: "r013",
       siteId: "shockley",
       date: "2026-08-17",
       clarity: 0.13,
