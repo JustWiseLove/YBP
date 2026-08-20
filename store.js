@@ -184,6 +184,24 @@ const STORE = {
       unit: "mg/L",
       level: 0,
       ts: "2026-08-19T09:30:00.000Z"
+    },
+    {
+      id: "r019",
+      siteId: "shockley",
+      date: "2026-08-20",
+      clarity: 0.13,
+      unit: "g/L",
+      level: 51.6,
+      ts: "2026-08-20T09:30:00.000Z"
+    },
+    {
+      id: "r020",
+      siteId: "darkrun",
+      date: "2026-08-20",
+      clarity: 12,
+      unit: "mg/L",
+      level: 7.6,
+      ts: "2026-08-20T09:30:00.000Z"
     }
   ]
 };
